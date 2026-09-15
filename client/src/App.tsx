@@ -31,11 +31,11 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
-function AppLayout({ children }: { children: React.ReactNode }) {
+export function AppLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="min-h-screen bg-background dark:bg-background-dark">
+    <div className="min-h-screen bg-background dark:bg-background-dark flex">
       <Sidebar />
-      <div className="lg:pl-60 pb-20 lg:pb-0">
+      <div className="flex-1 lg:pl-60 pb-20 lg:pb-0 flex flex-col">
         <TopBar />
         <main className="p-4 lg:p-6 max-w-7xl mx-auto">
           <ComplianceBanner />

@@ -21,9 +21,7 @@ export function Sidebar() {
 
   return (
     <aside
-      className={`hidden lg:flex flex-col bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 transition-all duration-200 ${
-        collapsed ? 'w-16' : 'w-60'
-      }`}
+      className={`hidden lg:flex flex-col bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 transition-all duration-200 h-screen ${collapsed ? 'w-16' : 'w-60'}`}
     >
       <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
         <Link to="/" className="flex items-center gap-2">
@@ -39,7 +37,7 @@ export function Sidebar() {
           {collapsed ? '→' : '←'}
         </button>
       </div>
-      <nav className="flex-1 p-2 space-y-1">
+      <nav className="flex-1 overflow-y-auto p-2 space-y-1">
         {navItems.map((item) => {
           const active = location.pathname === item.path ||
             (item.path !== '/' && location.pathname.startsWith(item.path));
