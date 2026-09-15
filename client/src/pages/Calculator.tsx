@@ -150,7 +150,10 @@ export default function Calculator() {
 
       <div className="card">
         <h3 className="font-semibold text-gray-900 dark:text-white mb-2">{t('common.compliance.warning')}</h3>
-        <p className="text-sm text-gray-500">{t('compliance.warning')}</p>
+          <p className="text-sm text-amber-600 dark:text-amber-400 mt-4 flex items-start gap-2">
+            <span>⚠️</span>
+            <span>{t('calculator.disclaimer')}</span>
+          </p>
       </div>
     </div>
   );
