@@ -1,0 +1,29 @@
+# Dependencies
+node_modules/
+/.vite/
+
+# Build output
+dist/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# SQLite database (production — dev DB can be committed)
+server/pharmalab.db
+server/pharmalab.db-*
+
+# Logs
+*.log
+npm-debug.log*
