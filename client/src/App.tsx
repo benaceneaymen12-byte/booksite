@@ -2,7 +2,7 @@ import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { I18nProvider } from './context/I18nContext';
-import { Sidebar, MobileNav, TopBar, BrandHeader, ComplianceBanner } from './components/Layout';
+import { Sidebar, MobileNav, TopBar, BrandHeader } from './components/Layout';
 import Dashboard from './pages/Dashboard';
 import AnalysesList from './pages/AnalysesList';
 import AnalysisForm from './pages/AnalysisForm';
@@ -51,7 +51,6 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         <BrandHeader />
         <TopBar />
         <main className="content-panel">
-          <ComplianceBanner />
           <div className="mt-4">{children}</div>
         </main>
       </div>
