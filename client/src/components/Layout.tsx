@@ -45,7 +45,7 @@ export function Sidebar() {
     >
       <div className="sidebar-header">
         <Link to="/" className="brand-link group">
-          <img className="brand-logo-card-small" src="/logok.png" alt="Biocare Biotech" />
+          <img className="brand-logo-card-small" src={`${import.meta.env.BASE_URL}logok.png`} alt="Biocare Biotech" />
         </Link>
         <button
           onClick={() => setCollapsed(!collapsed)}

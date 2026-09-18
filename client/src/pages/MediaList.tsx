@@ -119,7 +119,7 @@ export default function MediaList() {
       .replace(/"/g, '&quot;')
       .replace(/'/g, '&#039;');
     const value = (field: unknown) => escapeHtml(field || '—');
-    const logoUrl = `${window.location.origin}/logok.png`;
+    const logoUrl = `${window.location.origin}${import.meta.env.BASE_URL}logok.png`;
 
     printWindow.document.write(`<!doctype html>
       <html lang="fr">

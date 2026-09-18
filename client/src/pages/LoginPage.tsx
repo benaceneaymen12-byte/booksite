@@ -54,7 +54,7 @@ export default function LoginPage() {
 
       <div className="login-panel-wrapper">
         <div className="login-brand text-center mb-6">
-          <img className="brand-logo-card" src="/logok.png" alt="Biocare Biotech" />
+          <img className="brand-logo-card" src={`${import.meta.env.BASE_URL}logok.png`} alt="Biocare Biotech" />
           <p className="login-subtitle">Laboratory Management Assistant</p>
         </div>
 
