@@ -1173,7 +1173,10 @@ async function seedDemoData() {
 
 async function checkMediaExpiryEmails() {
   const { SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, EMAIL_FROM, EMAIL_TO } = process.env;
-  if (!SMTP_HOST || !SMTP_USER || !SMTP_PASS || !EMAIL_FROM || !EMAIL_TO) return;
+  if (!SMTP_HOST || !SMTP_USER || !SMTP_PASS || !EMAIL_FROM || !EMAIL_TO) {
+    console.log('Email notifications disabled: configure SMTP_HOST, SMTP_USER, SMTP_PASS, EMAIL_FROM, and EMAIL_TO');
+    return;
+  }
 
   const warningDays = Number.parseInt(process.env.MEDIA_EXPIRY_WARNING_DAYS || '10', 10);
   const days = Number.isFinite(warningDays) && warningDays > 0 ? warningDays : 10;
@@ -1184,7 +1187,10 @@ async function checkMediaExpiryEmails() {
      ORDER BY expiry_date ASC`,
     [`+${days} days`],
   );
-  if (!media.length) return;
+  if (!media.length) {
+    console.log(`No culture media expiring within ${days} days`);
+    return;
+  }
 
   const pending = [];
   for (const item of media) {
@@ -1192,7 +1198,10 @@ async function checkMediaExpiryEmails() {
     const sent = await dbGet('SELECT id FROM email_notifications WHERE notification_key = ?', [notificationKey]);
     if (!sent) pending.push(item);
   }
-  if (!pending.length) return;
+  if (!pending.length) {
+    console.log('No new culture-media expiry emails to send');
+    return;
+  }
 
   const port = Number.parseInt(SMTP_PORT || '587', 10);
   const transporter = nodemailer.createTransport({
