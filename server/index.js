@@ -14,7 +14,11 @@ app.use(cors());
 app.use(express.json());
 
 app.get('/api', (req, res) => {
-  res.json({ status: 'ok', service: 'PharmaLab API' });
+  res.json({
+    status: 'ok',
+    service: 'PharmaLab API',
+    storage: process.env.DB_PATH ? 'persistent-configured' : 'ephemeral-default',
+  });
 });
 
 // Serve static in production
@@ -34,6 +38,9 @@ if (process.env.NODE_ENV === 'production') {
 const DB_PATH = process.env.DB_PATH || path.join(__dirname, 'pharmalab.db');
 fs.mkdirSync(path.dirname(DB_PATH), { recursive: true });
 const db = new sqlite3.Database(DB_PATH);
+if (!process.env.DB_PATH) {
+  console.warn('WARNING: DB_PATH is not configured; SQLite data will be lost when the hosting service restarts.');
+}
 
 function dbRun(sql, params = []) {
   return new Promise((resolve, reject) => {
