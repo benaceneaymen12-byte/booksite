@@ -74,8 +74,14 @@ export default function MediaList() {
   };
 
   useEffect(() => {
-    if (notificationPermission !== 'granted' || !media.length) return;
-    const notified = JSON.parse(localStorage.getItem('mediaExpiryNotifications') || '{}');
+    if (notificationPermission !== 'granted' || !media.length || typeof Notification === 'undefined') return;
+    let notified: Record<string, string> = {};
+    try {
+      const saved = JSON.parse(localStorage.getItem('mediaExpiryNotifications') || '{}');
+      if (saved && typeof saved === 'object' && !Array.isArray(saved)) notified = saved;
+    } catch {
+      localStorage.removeItem('mediaExpiryNotifications');
+    }
     const today = new Date().toISOString().slice(0, 10);
     media.forEach((item) => {
       if (!item.id || !item.expiryDate) return;
@@ -84,10 +90,16 @@ export default function MediaList() {
       const key = `${item.id}:${item.expiryDate}`;
       if (notified[key] === today) return;
       const status = diff < 0 ? t('media.expired') : t('media.expiringSoon');
-      new Notification(`${item.mediumName} - ${status}`, { body: `${t('media.expiryDate')}: ${item.expiryDate}` });
+      try {
+        new Notification(`${item.mediumName} - ${status}`, { body: `${t('media.expiryDate')}: ${item.expiryDate}` });
+      } catch {
+        return;
+      }
       notified[key] = today;
     });
-    localStorage.setItem('mediaExpiryNotifications', JSON.stringify(notified));
+    try {
+      localStorage.setItem('mediaExpiryNotifications', JSON.stringify(notified));
+    } catch {}
   }, [media, notificationPermission, warningDays, t]);
 
   const handleDelete = async () => {
