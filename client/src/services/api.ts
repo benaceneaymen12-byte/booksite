@@ -119,6 +119,7 @@ export const api = {
 
   updateProfile: (data: any) => request('/auth/profile', { method: 'PUT', body: JSON.stringify(data) }),
   getUsers: () => request('/admin/users'),
+  createUser: (data: any) => request('/admin/users', { method: 'POST', body: JSON.stringify(data) }),
   updateUser: (id: number, data: any) => request(`/admin/users/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
 
   // Analyses

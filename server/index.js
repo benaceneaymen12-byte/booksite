@@ -340,6 +340,19 @@ app.get('/api/admin/users', authMiddleware, adminMiddleware, async (req, res) =>
   res.json(users.map(publicUser));
 });
 
+app.post('/api/admin/users', authMiddleware, adminMiddleware, async (req, res) => {
+  try {
+    const { username, password, name, email, phone, jobTitle, role } = req.body;
+    if (!username?.trim() || !password) return res.status(400).json({ message: 'Username and password are required' });
+    const hashed = await bcrypt.hash(password, 10);
+    const result = await dbRun('INSERT INTO users (username, password, name, email, phone, job_title, role) VALUES (?, ?, ?, ?, ?, ?, ?)', [username.trim(), hashed, name || '', email || '', phone || '', jobTitle || '', role === 'admin' ? 'admin' : 'analyst']);
+    const user = await dbGet('SELECT * FROM users WHERE id = ?', [result.lastID]);
+    res.status(201).json(publicUser(user));
+  } catch (err) {
+    res.status(err.message.includes('UNIQUE') ? 409 : 500).json({ message: err.message.includes('UNIQUE') ? 'Username already exists' : err.message });
+  }
+});
+
 app.put('/api/admin/users/:id', authMiddleware, adminMiddleware, async (req, res) => {
   try {
     const { name, email, phone, jobTitle, role, password } = req.body;
