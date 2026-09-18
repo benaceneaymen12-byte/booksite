@@ -1172,9 +1172,11 @@ async function seedDemoData() {
 }
 
 async function checkMediaExpiryEmails() {
-  const { SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, EMAIL_FROM, EMAIL_TO } = process.env;
-  if (!SMTP_HOST || !SMTP_USER || !SMTP_PASS || !EMAIL_FROM || !EMAIL_TO) {
-    console.log('Email notifications disabled: configure SMTP_HOST, SMTP_USER, SMTP_PASS, EMAIL_FROM, and EMAIL_TO');
+  const { RESEND_API_KEY, SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, EMAIL_FROM, EMAIL_TO } = process.env;
+  const hasResend = Boolean(RESEND_API_KEY && EMAIL_FROM && EMAIL_TO);
+  const hasSmtp = Boolean(SMTP_HOST && SMTP_USER && SMTP_PASS && EMAIL_FROM && EMAIL_TO);
+  if (!hasResend && !hasSmtp) {
+    console.log('Email notifications disabled: configure RESEND_API_KEY, EMAIL_FROM, and EMAIL_TO (or SMTP settings)');
     return;
   }
 
@@ -1203,23 +1205,31 @@ async function checkMediaExpiryEmails() {
     return;
   }
 
-  const port = Number.parseInt(SMTP_PORT || '587', 10);
-  const transporter = nodemailer.createTransport({
-    host: SMTP_HOST,
-    port,
-    secure: port === 465,
-    auth: { user: SMTP_USER, pass: SMTP_PASS },
-  });
   const lines = pending.map((item) => {
     const status = new Date(`${item.expiry_date}T23:59:59`) < new Date() ? 'EXPIRED' : 'EXPIRING SOON';
     return `- ${item.medium_name} | Lot: ${item.lot_number || 'N/A'} | Expiry: ${item.expiry_date} | ${status}`;
   });
-  await transporter.sendMail({
-    from: EMAIL_FROM,
-    to: EMAIL_TO,
-    subject: `Culture media expiry alert (${pending.length})`,
-    text: `The following culture media batches require attention:\n\n${lines.join('\n')}`,
-  });
+  const subject = `Culture media expiry alert (${pending.length})`;
+  const text = `The following culture media batches require attention:\n\n${lines.join('\n')}`;
+  if (hasResend) {
+    const response = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${RESEND_API_KEY}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ from: EMAIL_FROM, to: [EMAIL_TO], subject, text }),
+    });
+    if (!response.ok) throw new Error(`Resend returned HTTP ${response.status}: ${await response.text()}`);
+    console.log('Email sent through Resend');
+  } else {
+    const port = Number.parseInt(SMTP_PORT || '587', 10);
+    const transporter = nodemailer.createTransport({
+      host: SMTP_HOST,
+      port,
+      secure: port === 465,
+      auth: { user: SMTP_USER, pass: SMTP_PASS },
+    });
+    await transporter.sendMail({ from: EMAIL_FROM, to: EMAIL_TO, subject, text });
+    console.log('Email sent through SMTP');
+  }
   for (const item of pending) {
     await dbRun('INSERT INTO email_notifications (notification_key) VALUES (?)', [`media:${item.id}:${item.expiry_date}`]);
   }
