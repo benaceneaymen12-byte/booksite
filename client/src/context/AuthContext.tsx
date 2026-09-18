@@ -3,7 +3,7 @@ import { API_BASE } from '../services/api';
 
 interface AuthContextType {
   user: { id: number; username: string; name: string; role?: string } | null;
-  login: (username: string, password: string) => Promise<boolean>;
+  login: (username: string, password: string) => Promise<'success' | 'invalid' | 'unavailable'>;
   logout: () => void;
   isAuthenticated: boolean;
   loading: boolean;
@@ -44,7 +44,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }
 
-  async function login(username: string, password: string): Promise<boolean> {
+  async function login(username: string, password: string): Promise<'success' | 'invalid' | 'unavailable'> {
     try {
       const res = await fetch(`${API_BASE}/auth/login`, {
         method: 'POST',
@@ -55,11 +55,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const data = await res.json();
         localStorage.setItem('token', data.token);
         setUser(data.user);
-        return true;
+        return 'success';
       }
-      return false;
+      return res.status >= 500 ? 'unavailable' : 'invalid';
     } catch {
-      return false;
+      return 'unavailable';
     }
   }
 

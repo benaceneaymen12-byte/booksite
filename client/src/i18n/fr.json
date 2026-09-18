@@ -95,6 +95,7 @@
     "username": "Nom d'utilisateur",
     "password": "Mot de passe",
     "invalidCredentials": "Identifiants invalides",
+    "apiUnavailable": "Le serveur est temporairement indisponible. Attendez un instant puis réessayez.",
     "analystName": "Nom de l'analyste",
     "labName": "Nom du laboratoire",
     "theme": "Thème",

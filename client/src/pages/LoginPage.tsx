@@ -23,9 +23,11 @@ export default function LoginPage() {
     setError('');
     setLoading(true);
     try {
-      const ok = await login(username, password);
-      if (ok) {
+      const result = await login(username, password);
+      if (result === 'success') {
         navigate('/');
+      } else if (result === 'unavailable') {
+        setError(t('common.apiUnavailable'));
       } else {
         setError(t('common.invalidCredentials'));
       }
