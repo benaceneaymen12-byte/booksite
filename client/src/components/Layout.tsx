@@ -181,7 +181,6 @@ export function TopBar() {
         </h1>
         <div className="flex items-center gap-3">
           <OfflineIndicator />
-          <Link to="/profile" className="text-xs font-semibold text-white/80 hover:text-white">Profile</Link>
           <button onClick={logout} className="text-xs font-semibold text-white/80 hover:text-white" aria-label={t('common.logout')}>
             {t('common.logout')}
           </button>
