@@ -1,6 +1,8 @@
 const configuredApiUrl = import.meta.env.VITE_API_URL?.replace(/\/$/, '');
-export const API_BASE = configuredApiUrl
-  ? configuredApiUrl.endsWith('/api') ? configuredApiUrl : `${configuredApiUrl}/api`
+const defaultApiUrl = import.meta.env.PROD ? 'https://booksite-3.onrender.com' : '';
+const apiUrl = configuredApiUrl || defaultApiUrl;
+export const API_BASE = apiUrl
+  ? apiUrl.endsWith('/api') ? apiUrl : `${apiUrl}/api`
   : '/api';
 
 function normalizeShiftReport(report: any): any {
