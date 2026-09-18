@@ -1,5 +1,5 @@
 const configuredApiUrl = import.meta.env.VITE_API_URL?.replace(/\/$/, '');
-const defaultApiUrl = import.meta.env.PROD ? 'https://booksite-3.onrender.com' : '';
+const defaultApiUrl = import.meta.env.PROD ? 'https://booksite-5.onrender.com' : '';
 const apiUrl = configuredApiUrl || defaultApiUrl;
 export const API_BASE = apiUrl
   ? apiUrl.endsWith('/api') ? apiUrl : `${apiUrl}/api`
