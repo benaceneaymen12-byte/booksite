@@ -48,12 +48,12 @@ export default function AnalysesList() {
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+      <div className="page-header">
+        <h1 className="page-header h1">
           {t('analyses.title')}
         </h1>
-        <div className="flex gap-2">
-          <button onClick={() => { setEditingId(null); setShowForm(true); }} className="btn-primary">
+        <div className="primary-actions">
+          <button onClick={() => { setEditingId(null); setShowForm(true); }} className="btn btn-primary">
             + {t('analyses.newAnalysis')}
           </button>
         </div>

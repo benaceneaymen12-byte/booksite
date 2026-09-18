@@ -94,12 +94,42 @@ export interface CultureMedia {
   expiryDate?: string;
   storageConditions?: string;
   preparedBy?: string;
+  volume?: string;
   observations?: string;
   status?: MediaStatus;
   createdAt?: string;
   updatedAt?: string;
   isDemo?: boolean;
   unit?: string;
+}
+
+export interface PrePouredPetri {
+  id?: number;
+  mediaId: number;
+  mediumName: string;
+  lotNumber?: string;
+  preparationDate?: string;
+  expiryDate?: string;
+  quantityPrepared?: number;
+  quantityUsed?: number;
+  quantityRemaining?: number;
+  preparedBy?: string;
+  observations?: string;
+  createdAt?: string;
+}
+
+export interface MediaInventoryItem {
+  id?: number;
+  mediumName: string;
+  lotNumber?: string;
+  supplier?: string;
+  receivedDate?: string;
+  openingDate?: string;
+  expiryDate?: string;
+  storageLocation?: string;
+  quantity?: number;
+  unit?: string;
+  observations?: string;
 }
 
 export interface Microorganism {

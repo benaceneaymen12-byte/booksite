@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 500" role="img" aria-labelledby="title desc">
+  <title id="title">Biocare Biotech</title>
+  <desc id="desc">Biocare Biotech blue and white logo</desc>
+  <g fill="#159ED1">
+    <path d="M8 116c0-58 47-105 105-105s105 47 105 105v113H8z"/>
+    <path d="M8 266h210v113c0 58-47 105-105 105S8 437 8 379z"/>
+    <path d="M230 266h113v113c0 58-47 105-105 105h-8z"/>
+  </g>
+  <text x="374" y="218" fill="#FFFFFF" font-family="Arial, Helvetica, sans-serif" font-size="152" font-weight="700" letter-spacing="-7">Biocare</text>
+  <text x="382" y="390" fill="#FFFFFF" font-family="Arial, Helvetica, sans-serif" font-size="111" font-weight="400" letter-spacing="-3">Biotech</text>
+</svg>

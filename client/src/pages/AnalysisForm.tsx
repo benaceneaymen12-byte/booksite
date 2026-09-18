@@ -12,6 +12,7 @@ export default function AnalysisForm() {
   const editingId = id ? parseInt(id) : null;
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState<any[]>([]);
+  const [media, setMedia] = useState<any[]>([]);
   const [deleteModal, setDeleteModal] = useState(false);
   const form = useForm(
     {
@@ -31,6 +32,7 @@ export default function AnalysisForm() {
   );
 
   useEffect(() => {
+    api.getMedia().then((data) => setMedia(data || [])).catch(() => {});
     if (editingId) {
       api.getAnalysis(editingId).then((data) => {
         form.reset({
@@ -105,6 +107,16 @@ export default function AnalysisForm() {
           <FormField label={t('analyses.productType')} name="productType" type="select" value={form.values.productType} onChange={form.handleChange}
             options={[ { value: 'raw_material', label: t('analyses.rawMaterial') }, { value: 'finished_product', label: t('analyses.finishedProduct') }, { value: 'in_process', label: t('analyses.inProcess') }, { value: 'other', label: t('analyses.other') } ]} />
           <FormField label={t('analyses.batchLot')} name="batchLot" type="text" value={form.values.batchLot} onChange={form.handleChange} />
+          <div>
+            <label className="field-label">{t('analyses.preparedMediaLot')}</label>
+            <select className="input" value={media.find((item) => item.lotNumber === form.values.batchLot)?.id || ''} onChange={(event) => {
+              const selected = media.find((item) => String(item.id) === event.target.value);
+              form.handleChange('batchLot', selected?.lotNumber || '');
+            }}>
+              <option value="">{t('common.select')}</option>
+              {media.map((item) => <option key={item.id} value={item.id}>{item.mediumName} · {item.lotNumber || '—'} · {item.expiryDate || '—'}</option>)}
+            </select>
+          </div>
           <FormField label={t('analyses.samplingDate')} name="samplingDate" type="date" value={form.values.samplingDate} onChange={form.handleChange} error={form.errors.samplingDate} required />
           <FormField label={t('analyses.analysisDate')} name="analysisDate" type="date" value={form.values.analysisDate} onChange={form.handleChange} error={form.errors.analysisDate} required />
           <FormField label={t('analyses.analyst')} name="analyst" type="text" value={form.values.analyst} onChange={form.handleChange} />

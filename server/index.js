@@ -140,10 +140,54 @@ function initDb() {
       storage_conditions TEXT,
       prepared_by TEXT,
       unit TEXT,
+      volume TEXT,
       observations TEXT,
       is_demo INTEGER DEFAULT 0,
       created_at TEXT DEFAULT (datetime('now')),
       updated_at TEXT DEFAULT (datetime('now'))
+    )`),
+    dbRun(`CREATE TABLE IF NOT EXISTS pre_poured_petri (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      media_id INTEGER NOT NULL,
+      medium_name TEXT NOT NULL,
+      lot_number TEXT,
+      preparation_date TEXT,
+      expiry_date TEXT,
+      quantity_prepared REAL,
+      quantity_used REAL DEFAULT 0,
+      quantity_remaining REAL,
+      prepared_by TEXT,
+      observations TEXT,
+      created_at TEXT DEFAULT (datetime('now')),
+      updated_at TEXT DEFAULT (datetime('now')),
+      FOREIGN KEY (media_id) REFERENCES culture_media(id)
+    )`),
+    dbRun(`CREATE TABLE IF NOT EXISTS media_inventory (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      medium_name TEXT NOT NULL,
+      lot_number TEXT,
+      supplier TEXT,
+      received_date TEXT,
+      opening_date TEXT,
+      expiry_date TEXT,
+      storage_location TEXT,
+      quantity REAL,
+      unit TEXT,
+      observations TEXT,
+      created_at TEXT DEFAULT (datetime('now')),
+      updated_at TEXT DEFAULT (datetime('now'))
+    )`),
+    dbRun(`CREATE TABLE IF NOT EXISTS sterilization_cycles (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      equipment TEXT,
+      cycle_number TEXT,
+      cycle_date TEXT,
+      temperature REAL,
+      duration_minutes INTEGER,
+      operator TEXT,
+      result TEXT,
+      observations TEXT,
+      created_at TEXT DEFAULT (datetime('now'))
     )`),
     dbRun(`CREATE TABLE IF NOT EXISTS microorganisms (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -193,7 +237,7 @@ function initDb() {
       new_value TEXT,
       created_at TEXT DEFAULT (datetime('now'))
     )`),
-  ]);
+  ]).then(() => dbRun('ALTER TABLE culture_media ADD COLUMN volume TEXT').catch(() => null));
 }
 
 // Auth middleware
@@ -220,8 +264,8 @@ app.post('/api/auth/login', async (req, res) => {
     if (!user) return res.status(401).json({ message: 'Invalid credentials' });
     const valid = await bcrypt.compare(password, user.password);
     if (!valid) return res.status(401).json({ message: 'Invalid credentials' });
-    const token = jwt.sign({ id: user.id, username: user.username, name: user.name }, process.env.JWT_SECRET || 'pharmalab-secret-key', { expiresIn: '24h' });
-    res.json({ token, user: { id: user.id, username: user.username, name: user.name } });
+    const token = jwt.sign({ id: user.id, username: user.username, name: user.name, role: user.role || 'analyst' }, process.env.JWT_SECRET || 'pharmalab-secret-key', { expiresIn: '24h' });
+    res.json({ token, user: { id: user.id, username: user.username, name: user.name, role: user.role || 'analyst' } });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
@@ -485,9 +529,9 @@ app.post('/api/media', authMiddleware, async (req, res) => {
   try {
     const qtyRemaining = (data.quantityPrepared || 0) - (data.quantityUsed || 0);
     const { lastID } = await dbRun(
-      `INSERT INTO culture_media (medium_name, manufacturer, lot_number, preparation_date, sterilization_date, sterilization_method, quantity_prepared, quantity_used, quantity_remaining, expiry_date, storage_conditions, prepared_by, unit, observations)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [data.mediumName, data.manufacturer, data.lotNumber, data.preparationDate, data.sterilizationDate, data.sterilizationMethod, data.quantityPrepared, data.quantityUsed, qtyRemaining, data.expiryDate, data.storageConditions, data.preparedBy, data.unit, data.observations]
+      `INSERT INTO culture_media (medium_name, manufacturer, lot_number, preparation_date, sterilization_date, sterilization_method, quantity_prepared, quantity_used, quantity_remaining, expiry_date, storage_conditions, prepared_by, unit, volume, observations)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [data.mediumName, data.manufacturer, data.lotNumber, data.preparationDate, data.sterilizationDate, data.sterilizationMethod, data.quantityPrepared, data.quantityUsed, qtyRemaining, data.expiryDate, data.storageConditions, data.preparedBy, data.unit, data.volume, data.observations]
     );
     await dbRun(`INSERT INTO audit_logs (user, action, record_type, record_id) VALUES (?, 'created', 'media', ?)`, [req.user.username, lastID]);
     const row = await dbGet('SELECT * FROM culture_media WHERE id = ?', [lastID]);
@@ -504,8 +548,8 @@ app.put('/api/media/:id', authMiddleware, async (req, res) => {
     if (!existing) return res.status(404).json({ message: 'Not found' });
     const qtyRemaining = (data.quantityPrepared || 0) - (data.quantityUsed || 0);
     await dbRun(
-      `UPDATE culture_media SET medium_name=?, manufacturer=?, lot_number=?, preparation_date=?, sterilization_date=?, sterilization_method=?, quantity_prepared=?, quantity_used=?, quantity_remaining=?, expiry_date=?, storage_conditions=?, prepared_by=?, unit=?, observations=?, updated_at=datetime('now') WHERE id=?`,
-      [data.mediumName, data.manufacturer, data.lotNumber, data.preparationDate, data.sterilizationDate, data.sterilizationMethod, data.quantityPrepared, data.quantityUsed, qtyRemaining, data.expiryDate, data.storageConditions, data.preparedBy, data.unit, data.observations, req.params.id]
+      `UPDATE culture_media SET medium_name=?, manufacturer=?, lot_number=?, preparation_date=?, sterilization_date=?, sterilization_method=?, quantity_prepared=?, quantity_used=?, quantity_remaining=?, expiry_date=?, storage_conditions=?, prepared_by=?, unit=?, volume=?, observations=?, updated_at=datetime('now') WHERE id=?`,
+      [data.mediumName, data.manufacturer, data.lotNumber, data.preparationDate, data.sterilizationDate, data.sterilizationMethod, data.quantityPrepared, data.quantityUsed, qtyRemaining, data.expiryDate, data.storageConditions, data.preparedBy, data.unit, data.volume, data.observations, req.params.id]
     );
     await dbRun(`INSERT INTO audit_logs (user, action, record_type, record_id, old_value, new_value) VALUES (?, 'updated', 'media', ?, ?, ?)`, [req.user.username, req.params.id, JSON.stringify(existing), JSON.stringify({ ...existing, quantity_remaining: qtyRemaining })]);
     const row = await dbGet('SELECT * FROM culture_media WHERE id = ?', [req.params.id]);
@@ -525,6 +569,121 @@ app.delete('/api/media/:id', authMiddleware, async (req, res) => {
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
+});
+
+// Pre-poured Petri dishes linked to prepared culture media
+app.get('/api/petri', authMiddleware, async (req, res) => {
+  try {
+    const rows = await dbAll('SELECT * FROM pre_poured_petri ORDER BY expiry_date ASC, created_at DESC');
+    res.json(rows);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+app.post('/api/petri', authMiddleware, async (req, res) => {
+  const data = req.body;
+  try {
+    const media = await dbGet('SELECT * FROM culture_media WHERE id = ?', [data.mediaId]);
+    if (!media) return res.status(400).json({ message: 'Culture media batch not found' });
+    const quantityPrepared = Number(data.quantityPrepared) || 0;
+    const quantityUsed = Number(data.quantityUsed) || 0;
+    const mediaRemaining = Number(media.quantity_remaining ?? ((media.quantity_prepared || 0) - (media.quantity_used || 0)));
+    if (quantityPrepared <= 0) return res.status(400).json({ message: 'Petri quantity must be greater than zero' });
+    if (quantityPrepared > mediaRemaining) return res.status(400).json({ message: 'Not enough prepared media remaining' });
+    const mediaUsed = Number(media.quantity_used) || 0;
+    await dbRun(
+      `UPDATE culture_media SET quantity_used = ?, quantity_remaining = ?, updated_at=datetime('now') WHERE id = ?`,
+      [mediaUsed + quantityPrepared, mediaRemaining - quantityPrepared, media.id]
+    );
+    const { lastID } = await dbRun(
+      `INSERT INTO pre_poured_petri (media_id, medium_name, lot_number, preparation_date, expiry_date, quantity_prepared, quantity_used, quantity_remaining, prepared_by, observations)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [media.id, media.medium_name, media.lot_number, media.preparation_date, media.expiry_date, quantityPrepared, quantityUsed, quantityPrepared - quantityUsed, data.preparedBy, data.observations]
+    );
+    await dbRun(`INSERT INTO audit_logs (user, action, record_type, record_id, old_value, new_value) VALUES (?, 'created', 'petri', ?, ?, ?)`, [req.user.username, lastID, JSON.stringify({ mediaRemaining }), JSON.stringify({ mediaRemaining: mediaRemaining - quantityPrepared, quantity: quantityPrepared })]);
+    res.status(201).json(await dbGet('SELECT * FROM pre_poured_petri WHERE id = ?', [lastID]));
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+app.delete('/api/petri/:id', authMiddleware, async (req, res) => {
+  try {
+    const existing = await dbGet('SELECT * FROM pre_poured_petri WHERE id = ?', [req.params.id]);
+    if (!existing) return res.status(404).json({ message: 'Not found' });
+    const media = await dbGet('SELECT * FROM culture_media WHERE id = ?', [existing.media_id]);
+    if (media) {
+      const used = Math.max(0, (Number(media.quantity_used) || 0) - (Number(existing.quantity_prepared) || 0));
+      const prepared = Number(media.quantity_prepared) || 0;
+      await dbRun('UPDATE culture_media SET quantity_used = ?, quantity_remaining = ?, updated_at=datetime(\'now\') WHERE id = ?', [used, prepared - used, media.id]);
+    }
+    await dbRun('DELETE FROM pre_poured_petri WHERE id = ?', [req.params.id]);
+    await dbRun(`INSERT INTO audit_logs (user, action, record_type, record_id, old_value) VALUES (?, 'deleted', 'petri', ?, ?)`, [req.user.username, req.params.id, JSON.stringify(existing)]);
+    res.status(204).send();
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// Culture-media inventory
+app.get('/api/inventory', authMiddleware, async (req, res) => {
+  try {
+    const rows = await dbAll('SELECT * FROM media_inventory ORDER BY expiry_date ASC, created_at DESC');
+    res.json(rows);
+  } catch (err) { res.status(500).json({ message: err.message }); }
+});
+
+app.post('/api/inventory', authMiddleware, async (req, res) => {
+  const data = req.body;
+  try {
+    const { lastID } = await dbRun(
+      `INSERT INTO media_inventory (medium_name, lot_number, supplier, received_date, opening_date, expiry_date, storage_location, quantity, unit, observations)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [data.mediumName, data.lotNumber, data.supplier, data.receivedDate, data.openingDate, data.expiryDate, data.storageLocation, data.quantity, data.unit, data.observations]
+    );
+    await dbRun(`INSERT INTO audit_logs (user, action, record_type, record_id) VALUES (?, 'created', 'inventory', ?)`, [req.user.username, lastID]);
+    res.status(201).json(await dbGet('SELECT * FROM media_inventory WHERE id = ?', [lastID]));
+  } catch (err) { res.status(500).json({ message: err.message }); }
+});
+
+app.post('/api/inventory/import', authMiddleware, async (req, res) => {
+  const rows = Array.isArray(req.body.rows) ? req.body.rows : [];
+  try {
+    for (const data of rows) {
+      await dbRun(
+        `INSERT INTO media_inventory (medium_name, lot_number, supplier, received_date, opening_date, expiry_date, storage_location, quantity, unit, observations)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [data.mediumName, data.lotNumber, data.supplier, data.receivedDate, data.openingDate, data.expiryDate, data.storageLocation, data.quantity, data.unit, data.observations]
+      );
+    }
+    await dbRun(`INSERT INTO audit_logs (user, action, record_type, record_id, new_value) VALUES (?, 'created', 'inventory_import', 0, ?)`, [req.user.username, JSON.stringify({ count: rows.length })]);
+    res.status(201).json({ imported: rows.length });
+  } catch (err) { res.status(500).json({ message: err.message }); }
+});
+
+app.delete('/api/inventory/:id', authMiddleware, async (req, res) => {
+  try {
+    const existing = await dbGet('SELECT * FROM media_inventory WHERE id = ?', [req.params.id]);
+    if (!existing) return res.status(404).json({ message: 'Not found' });
+    await dbRun('DELETE FROM media_inventory WHERE id = ?', [req.params.id]);
+    await dbRun(`INSERT INTO audit_logs (user, action, record_type, record_id, old_value) VALUES (?, 'deleted', 'inventory', ?, ?)`, [req.user.username, req.params.id, JSON.stringify(existing)]);
+    res.status(204).send();
+  } catch (err) { res.status(500).json({ message: err.message }); }
+});
+
+app.get('/api/sterilization', authMiddleware, async (req, res) => {
+  try { res.json(await dbAll('SELECT * FROM sterilization_cycles ORDER BY cycle_date DESC, created_at DESC')); }
+  catch (err) { res.status(500).json({ message: err.message }); }
+});
+
+app.post('/api/sterilization', authMiddleware, async (req, res) => {
+  const data = req.body;
+  try {
+    const { lastID } = await dbRun(`INSERT INTO sterilization_cycles (equipment, cycle_number, cycle_date, temperature, duration_minutes, operator, result, observations) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`, [data.equipment, data.cycleNumber, data.cycleDate, data.temperature, data.durationMinutes, data.operator, data.result, data.observations]);
+    await dbRun(`INSERT INTO audit_logs (user, action, record_type, record_id) VALUES (?, 'created', 'sterilization', ?)`, [req.user.username, lastID]);
+    res.status(201).json(await dbGet('SELECT * FROM sterilization_cycles WHERE id = ?', [lastID]));
+  } catch (err) { res.status(500).json({ message: err.message }); }
 });
 
 // Microorganisms
@@ -818,6 +977,36 @@ app.put('/api/settings', authMiddleware, async (req, res) => {
   }
 });
 
+app.get('/api/backup', authMiddleware, async (req, res) => {
+  try {
+    const tables = ['users', 'analyses', 'personnel_monitoring', 'water_samples', 'culture_media', 'pre_poured_petri', 'media_inventory', 'microorganisms', 'shift_reports', 'settings', 'specifications', 'sop_references', 'audit_logs'];
+    const backup = { version: 1, createdAt: new Date().toISOString(), tables: {} };
+    for (const table of tables) backup.tables[table] = await dbAll(`SELECT * FROM ${table}`);
+    res.json(backup);
+  } catch (err) { res.status(500).json({ message: err.message }); }
+});
+
+app.post('/api/restore', authMiddleware, async (req, res) => {
+  const backup = req.body;
+  if (!backup?.tables || typeof backup.tables !== 'object') return res.status(400).json({ message: 'Invalid backup file' });
+  const allowedTables = ['analyses', 'personnel_monitoring', 'water_samples', 'culture_media', 'pre_poured_petri', 'media_inventory', 'microorganisms', 'shift_reports', 'settings', 'specifications', 'sop_references'];
+  try {
+    let restored = 0;
+    for (const table of allowedTables) {
+      const rows = Array.isArray(backup.tables[table]) ? backup.tables[table] : [];
+      for (const row of rows) {
+        const columns = Object.keys(row).filter((column) => column !== 'id');
+        if (!columns.length) continue;
+        const placeholders = columns.map(() => '?').join(', ');
+        await dbRun(`INSERT INTO ${table} (${columns.join(', ')}) VALUES (${placeholders})`, columns.map((column) => row[column]));
+        restored += 1;
+      }
+    }
+    await dbRun(`INSERT INTO audit_logs (user, action, record_type, record_id, new_value) VALUES (?, 'created', 'restore', 0, ?)`, [req.user.username, JSON.stringify({ restored })]);
+    res.json({ restored });
+  } catch (err) { res.status(500).json({ message: err.message }); }
+});
+
 app.get('/api/settings/specifications', authMiddleware, async (req, res) => {
   try {
     res.json(await dbAll('SELECT * FROM specifications ORDER BY name ASC'));
@@ -864,10 +1053,22 @@ app.get('/api/settings/sops', authMiddleware, async (req, res) => {
 });
 
 app.post('/api/settings/sops', authMiddleware, async (req, res) => {
-  const { name, ref_code } = req.body;
+  const { name, refCode, ref_code } = req.body;
+  const reference = refCode ?? ref_code ?? '';
   try {
-    const { lastID } = await dbRun('INSERT INTO sop_references (name, ref_code) VALUES (?, ?)', [name, ref_code]);
-    res.status(201).json({ id: lastID, name, ref_code });
+    const { lastID } = await dbRun('INSERT INTO sop_references (name, ref_code) VALUES (?, ?)', [name, reference]);
+    res.status(201).json({ id: lastID, name, refCode: reference, ref_code: reference });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+app.put('/api/settings/sops/:id', authMiddleware, async (req, res) => {
+  const { name, refCode, ref_code } = req.body;
+  const reference = refCode ?? ref_code ?? '';
+  try {
+    await dbRun('UPDATE sop_references SET name = ?, ref_code = ? WHERE id = ?', [name, reference, req.params.id]);
+    res.json({ id: req.params.id, name, refCode: reference, ref_code: reference });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
@@ -896,11 +1097,25 @@ app.get('/api/audit', authMiddleware, async (req, res) => {
 
 // Seed demo data
 async function seedDemoData() {
+  const defaultAdminPassword = 'aymen1234';
+  const defaultAnalystPassword = 'analyst1234';
   const userExists = await dbGet('SELECT id FROM users WHERE username = ?', ['admin']);
+
   if (!userExists) {
-    const hashed = await bcrypt.hash('admin', 10);
+    const hashed = await bcrypt.hash(defaultAdminPassword, 10);
     await dbRun('INSERT INTO users (username, password, name, role) VALUES (?, ?, ?, ?)', ['admin', hashed, 'Administrateur', 'admin']);
-    console.log('Default admin user created (admin/admin)');
+    console.log('Default admin user created (admin/aymen1234)');
+  } else {
+    const hashed = await bcrypt.hash(defaultAdminPassword, 10);
+    await dbRun('UPDATE users SET password = ?, name = ?, role = ? WHERE username = ?', [hashed, 'Administrateur', 'admin', 'admin']);
+    console.log('Default admin password reset to (admin/aymen1234)');
+  }
+
+  const analystExists = await dbGet('SELECT id FROM users WHERE username = ?', ['analyst']);
+  if (!analystExists) {
+    const hashedAnalyst = await bcrypt.hash(defaultAnalystPassword, 10);
+    await dbRun('INSERT INTO users (username, password, name, role) VALUES (?, ?, ?, ?)', ['analyst', hashedAnalyst, 'Analyste', 'analyst']);
+    console.log('Default analyst user created (analyst/analyst1234)');
   }
 
   const mediaCount = await dbGet('SELECT COUNT(*) as count FROM culture_media');

@@ -37,63 +37,90 @@ export default function LoginPage() {
   };
 
   if (authLoading) {
-    return <div className="min-h-screen flex items-center justify-center"><div className="text-gray-400">{t('common.loading')}</div></div>;
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="text-center">
+          <div className="w-10 h-10 border-3 border-primary/30 border-t-primary rounded-full animate-spin mx-auto mb-3" />
+          <p className="text-sm text-muted">{t('common.loading')}</p>
+        </div>
+      </div>
+    );
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background dark:bg-background-dark p-4">
-      <div className="w-full max-w-sm">
-        <div className="text-center mb-8">
-          <div className="text-6xl mb-4">🧪</div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">PharmaLab Assistant</h1>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Productivity Assistant — Not GMP/QC Software</p>
+    <div className="login-shell min-h-screen">
+      <div className="login-orb login-orb-one" />
+      <div className="login-orb login-orb-two" />
+
+      <div className="login-panel-wrapper">
+        <div className="login-brand text-center mb-6">
+          <img className="brand-logo-card" src="/logok.png" alt="Biocare Biotech" />
+          <p className="login-subtitle">Laboratory Management Assistant</p>
         </div>
 
-        <div className="card">
+        <div className="card login-card">
           <form onSubmit={handleLogin} className="space-y-4">
+            {error && (
+              <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/40 rounded-lg p-2.5 text-sm text-red-700 dark:text-red-300 flex items-center gap-2">
+                <span>✕</span>
+                <span>{error}</span>
+              </div>
+            )}
+
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                {t('common.username')} <span className="text-red-500">*</span>
+              <label className="field-label">
+                {t('common.username')} <span className="text-danger">*</span>
               </label>
               <input
                 type="text"
+                className="input"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                className="w-full px-3 py-2 border rounded-md text-sm"
+                autoComplete="username"
                 autoFocus
               />
             </div>
+
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                {t('common.password')} <span className="text-red-500">*</span>
+              <label className="field-label">
+                {t('common.password')} <span className="text-danger">*</span>
               </label>
               <input
                 type="password"
+                className="input"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-3 py-2 border rounded-md text-sm"
+                autoComplete="current-password"
               />
             </div>
-            {error && <p className="text-red-500 text-sm">{error}</p>}
-            <button type="submit" disabled={loading || !username || !password} className="btn-primary w-full">
-              {loading ? t('common.loading') : t('common.login')}
+
+            <button
+              type="submit"
+              disabled={loading || !username || !password}
+              className="btn btn-primary btn-lg w-full"
+            >
+              {loading ? (
+                <>
+                  <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  {t('common.loading')}
+                </>
+              ) : (
+                t('common.login')
+              )}
             </button>
           </form>
 
-          <div className="mt-4 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-            <p className="text-xs text-gray-500 dark:text-gray-400">
-              <strong>Demo credentials:</strong><br />
-              Username: <code className="bg-gray-200 dark:bg-gray-700 px-1 rounded">admin</code><br />
-              Password: <code className="bg-gray-200 dark:bg-gray-700 px-1 rounded">admin</code>
-            </p>
-          </div>
-
-          <div className="mt-4 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
-            <p className="text-xs text-amber-700 dark:text-amber-400">
-              ⚠️ {t('compliance.warning')}
+          <div className="mt-3 p-2.5 bg-amber-50 dark:bg-amber-900/15 border border-amber-200 dark:border-amber-800/30 rounded-lg">
+            <p className="text-[11px] text-amber-700 dark:text-amber-400 flex items-start gap-1.5">
+              <span className="flex-shrink-0 mt-0.5">⚠️</span>
+              <span>{t('compliance.warning')}</span>
             </p>
           </div>
         </div>
+
+        <p className="text-center text-[10px] text-muted mt-4 tracking-wide uppercase">
+          Made by Aymen Benahcene · Not GMP/QC software
+        </p>
       </div>
     </div>
   );

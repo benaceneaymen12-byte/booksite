@@ -12,6 +12,9 @@ import WaterList from './pages/WaterList';
 import WaterForm from './pages/WaterForm';
 import MediaList from './pages/MediaList';
 import MediaForm from './pages/MediaForm';
+import PetriList from './pages/PetriList';
+import InventoryPage from './pages/InventoryPage';
+import SterilizationPage from './pages/SterilizationPage';
 import MicroList from './pages/MicroList';
 import MicroForm from './pages/MicroForm';
 import Calculator from './pages/Calculator';
@@ -33,11 +36,11 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="min-h-screen bg-background dark:bg-background-dark flex">
+    <div className="app-shell">
       <Sidebar />
-      <div className="flex-1 lg:pl-60 pb-20 lg:pb-0 flex flex-col">
+      <div className="app-main">
         <TopBar />
-        <main className="p-4 lg:p-6 max-w-7xl mx-auto">
+        <main className="content-panel">
           <ComplianceBanner />
           <div className="mt-4">{children}</div>
         </main>
@@ -185,6 +188,27 @@ export default function App() {
                   </ProtectedRoute>
                 }
               />
+              <Route
+                path="/petri"
+                element={
+                  <ProtectedRoute>
+                    <AppLayout>
+                      <PetriList />
+                    </AppLayout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/inventory"
+                element={
+                  <ProtectedRoute>
+                    <AppLayout>
+                      <InventoryPage />
+                    </AppLayout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route path="/sterilization" element={<ProtectedRoute><AppLayout><SterilizationPage /></AppLayout></ProtectedRoute>} />
               <Route
                 path="/microorganisms"
                 element={

@@ -8,18 +8,26 @@ export default function ReportPreview() {
   const { id } = useParams();
   const [report, setReport] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [pdfUrl, setPdfUrl] = useState<string | null>(null);
+  const [previewHtml, setPreviewHtml] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [r, url] = await Promise.all([
+        const [reportResult, htmlResult] = await Promise.allSettled([
           api.getShiftReport(parseInt(id!)),
           api.generateReportPdf(parseInt(id!)),
         ]);
-        setReport(r);
-        setPdfUrl(url);
-      } catch {}
+
+        if (reportResult.status === 'fulfilled') {
+          setReport(reportResult.value);
+        }
+
+        if (htmlResult.status === 'fulfilled') {
+          setPreviewHtml(htmlResult.value);
+        }
+      } catch {
+        // keep the previous state empty and show the not-found message below
+      }
       finally {
         setLoading(false);
       }
@@ -31,6 +39,8 @@ export default function ReportPreview() {
 
   if (!report) return <div className="text-center py-8">Report not found</div>;
 
+  const reportShift = report.shiftLabel || `${report.shiftStart || ''} - ${report.shiftEnd || ''}`.trim().replace(/^\s*-\s*|\s*-\s*$/g, '') || '—';
+
   const labName = localStorage.getItem('labName') || 'Laboratoire';
   const generated = new Date().toLocaleString();
 
@@ -39,13 +49,13 @@ export default function ReportPreview() {
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{t('reports.preview')}</h1>
         <div className="flex gap-2">
-          {pdfUrl && (
+          {previewHtml && (
             <>
-              <a href={pdfUrl} download={`rapport-${report.id}.pdf`} className="btn-primary">
+              <a href={URL.createObjectURL(new Blob([previewHtml], { type: 'text/html' }))} download={`rapport-${report.id}.html`} className="btn-primary">
                 {t('reports.download')}
               </a>
               <button
-                onClick={() => window.open(pdfUrl, '_blank')}
+                onClick={() => window.open(URL.createObjectURL(new Blob([previewHtml], { type: 'text/html' })), '_blank')}
                 className="btn btn-secondary"
               >
                 {t('reports.printReport')}
@@ -55,7 +65,7 @@ export default function ReportPreview() {
                   if (navigator.share) {
                     navigator.share({
                       title: `Rapport de shift - ${report.date}`,
-                      url: pdfUrl,
+                      url: URL.createObjectURL(new Blob([previewHtml], { type: 'text/html' })),
                     }).catch(() => {});
                   }
                 }}
@@ -92,7 +102,7 @@ export default function ReportPreview() {
           <div>
             <p className="text-xs text-gray-500 uppercase">Shift</p>
             <p className="font-semibold text-gray-900 dark:text-white">
-              {report.shiftLabel || `${report.shiftStart} - ${report.shiftEnd}`}
+              {reportShift}
             </p>
           </div>
           <div>
@@ -103,7 +113,7 @@ export default function ReportPreview() {
 
         <div className="mb-6">
           <h3 className="font-semibold text-gray-900 dark:text-white mb-3">{t('reports.activities')}</h3>
-          {report.activities && report.activities.length > 0 ? (
+          {Array.isArray(report.activities) && report.activities.length > 0 ? (
             <div className="space-y-2">
               {report.activities.map((a: string, i: number) => (
                 <div key={i} className="flex items-center gap-2">
@@ -128,16 +138,16 @@ export default function ReportPreview() {
 
         <div className="p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
           <p className="text-xs text-amber-700 dark:text-amber-400">
-            Document généré automatiquement par PharmaLab Assistant.
+            Document généré automatiquement par {t('common.appName')}.
             Ce rapport est un aide-mémoire et ne remplace pas la documentation GMP officielle.
           </p>
         </div>
       </div>
 
-      {pdfUrl && (
+      {previewHtml && (
         <div className="card">
           <h3 className="font-semibold text-gray-900 dark:text-white mb-2">{t('reports.preview')}</h3>
-          <iframe src={pdfUrl} className="w-full h-[500px] border border-gray-200 rounded-lg" />
+          <iframe srcDoc={previewHtml} className="w-full h-[500px] border border-gray-200 rounded-lg" />
         </div>
       )}
     </div>

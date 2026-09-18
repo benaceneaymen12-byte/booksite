@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useI18n } from '../context/I18nContext';
 
 interface FormData {
   [key: string]: any;
@@ -22,6 +23,7 @@ interface FormFieldProps {
   min?: string | number;
   max?: string | number;
   step?: string;
+  list?: string;
 }
 
 export function FormField({
@@ -38,21 +40,21 @@ export function FormField({
   min,
   max,
   step,
+  list,
 }: FormFieldProps) {
+  const { t } = useI18n();
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const val = e.target.type === 'number' ? (e.target.value === '' ? '' : parseFloat(e.target.value)) : e.target.value;
     onChange(name, val);
   };
 
-  const inputClass = error
-    ? 'input-error'
-    : '';
+  const fieldClass = error ? 'input input-error' : 'input';
 
   if (type === 'textarea') {
     return (
       <div>
-        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-          {label} {required && <span className="text-red-500">*</span>}
+        <label className="field-label">
+          {label} {required && <span className="text-danger">*</span>}
         </label>
         <textarea
           name={name}
@@ -60,10 +62,10 @@ export function FormField({
           onChange={handleChange}
           placeholder={placeholder}
           disabled={disabled}
-          className={`w-full px-3 py-2 border rounded-md text-sm bg-white dark:bg-gray-800 dark:border-gray-600 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-colors ${inputClass}`}
+          className={`input textarea`}
           rows={3}
         />
-        {error && <p className="text-red-500 text-xs mt-1">{error}</p>}
+        {error && <p className="field-error">{error}</p>}
       </div>
     );
   }
@@ -71,24 +73,24 @@ export function FormField({
   if (type === 'select' && options) {
     return (
       <div>
-        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-          {label} {required && <span className="text-red-500">*</span>}
+        <label className="field-label">
+          {label} {required && <span className="text-danger">*</span>}
         </label>
         <select
           name={name}
           value={value || ''}
           onChange={handleChange}
           disabled={disabled}
-          className={`w-full px-3 py-2 border rounded-md text-sm bg-white dark:bg-gray-800 dark:border-gray-600 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-colors ${inputClass}`}
+          className="input"
         >
-          <option value="">-- Select --</option>
+          <option value="">{t('common.select') || '-- Select --'}</option>
           {options.map((opt) => (
             <option key={opt.value} value={opt.value}>
               {opt.label}
             </option>
           ))}
         </select>
-        {error && <p className="text-red-500 text-xs mt-1">{error}</p>}
+        {error && <p className="field-error">{error}</p>}
       </div>
     );
   }
@@ -102,18 +104,18 @@ export function FormField({
           checked={!!value}
           onChange={(e) => onChange(name, e.target.checked)}
           disabled={disabled}
-          className="w-4 h-4 rounded border-gray-300 dark:border-gray-600 text-primary focus:ring-primary"
+          className="w-4 h-4 rounded border-border dark:border-border-dark text-primary focus:ring-primary"
         />
-        <span className="text-sm text-gray-700 dark:text-gray-300">{label}</span>
-        {error && <p className="text-red-500 text-xs ml-4">{error}</p>}
+        <span className="text-sm">{label}</span>
+        {error && <p className="field-error ml-4">{error}</p>}
       </label>
     );
   }
 
   return (
     <div>
-      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-        {label} {required && <span className="text-red-500">*</span>}
+      <label className="field-label">
+        {label} {required && <span className="text-danger">*</span>}
       </label>
       <input
         type={type}
@@ -125,9 +127,10 @@ export function FormField({
         min={min}
         max={max}
         step={step}
-        className={`w-full px-3 py-2 border rounded-md text-sm bg-white dark:bg-gray-800 dark:border-gray-600 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-colors ${inputClass}`}
+        list={list}
+        className={fieldClass}
       />
-      {error && <p className="text-red-500 text-xs mt-1">{error}</p>}
+      {error && <p className="field-error">{error}</p>}
     </div>
   );
 }
