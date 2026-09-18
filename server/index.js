@@ -3,6 +3,7 @@ const cors = require('cors');
 const sqlite3 = require('sqlite3').verbose();
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const nodemailer = require('nodemailer');
 const fs = require('fs');
 const path = require('path');
 
@@ -155,6 +156,11 @@ function initDb() {
       is_demo INTEGER DEFAULT 0,
       created_at TEXT DEFAULT (datetime('now')),
       updated_at TEXT DEFAULT (datetime('now'))
+    )`),
+    dbRun(`CREATE TABLE IF NOT EXISTS email_notifications (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      notification_key TEXT UNIQUE NOT NULL,
+      sent_at TEXT DEFAULT (datetime('now'))
     )`),
     dbRun(`CREATE TABLE IF NOT EXISTS pre_poured_petri (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -1165,10 +1171,60 @@ async function seedDemoData() {
   }
 }
 
+async function checkMediaExpiryEmails() {
+  const { SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, EMAIL_FROM, EMAIL_TO } = process.env;
+  if (!SMTP_HOST || !SMTP_USER || !SMTP_PASS || !EMAIL_FROM || !EMAIL_TO) return;
+
+  const warningDays = Number.parseInt(process.env.MEDIA_EXPIRY_WARNING_DAYS || '10', 10);
+  const days = Number.isFinite(warningDays) && warningDays > 0 ? warningDays : 10;
+  const media = await dbAll(
+    `SELECT id, medium_name, lot_number, expiry_date, manufacturer
+     FROM culture_media
+     WHERE expiry_date IS NOT NULL AND expiry_date <= date('now', ?)
+     ORDER BY expiry_date ASC`,
+    [`+${days} days`],
+  );
+  if (!media.length) return;
+
+  const pending = [];
+  for (const item of media) {
+    const notificationKey = `media:${item.id}:${item.expiry_date}`;
+    const sent = await dbGet('SELECT id FROM email_notifications WHERE notification_key = ?', [notificationKey]);
+    if (!sent) pending.push(item);
+  }
+  if (!pending.length) return;
+
+  const port = Number.parseInt(SMTP_PORT || '587', 10);
+  const transporter = nodemailer.createTransport({
+    host: SMTP_HOST,
+    port,
+    secure: port === 465,
+    auth: { user: SMTP_USER, pass: SMTP_PASS },
+  });
+  const lines = pending.map((item) => {
+    const status = new Date(`${item.expiry_date}T23:59:59`) < new Date() ? 'EXPIRED' : 'EXPIRING SOON';
+    return `- ${item.medium_name} | Lot: ${item.lot_number || 'N/A'} | Expiry: ${item.expiry_date} | ${status}`;
+  });
+  await transporter.sendMail({
+    from: EMAIL_FROM,
+    to: EMAIL_TO,
+    subject: `Culture media expiry alert (${pending.length})`,
+    text: `The following culture media batches require attention:\n\n${lines.join('\n')}`,
+  });
+  for (const item of pending) {
+    await dbRun('INSERT INTO email_notifications (notification_key) VALUES (?)', [`media:${item.id}:${item.expiry_date}`]);
+  }
+  console.log(`Sent ${pending.length} culture-media expiry email notification(s)`);
+}
+
 // Start
 initDb().then(() => {
   seedDemoData().then(() => {
     console.log('Database initialized and demo data seeded');
+    checkMediaExpiryEmails().catch((err) => console.error('Email notification error:', err.message));
+    setInterval(() => {
+      checkMediaExpiryEmails().catch((err) => console.error('Email notification error:', err.message));
+    }, 24 * 60 * 60 * 1000);
     app.listen(PORT, '0.0.0.0', () => {
       console.log(`PharmaLab API server running on http://0.0.0.0:${PORT}`);
     });
