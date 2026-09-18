@@ -1,4 +1,7 @@
-export const API_BASE = import.meta.env.VITE_API_URL || '/api';
+const configuredApiUrl = import.meta.env.VITE_API_URL?.replace(/\/$/, '');
+export const API_BASE = configuredApiUrl
+  ? configuredApiUrl.endsWith('/api') ? configuredApiUrl : `${configuredApiUrl}/api`
+  : '/api';
 
 function normalizeShiftReport(report: any): any {
   if (!report) return report;
