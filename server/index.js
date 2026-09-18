@@ -32,6 +32,7 @@ if (process.env.NODE_ENV === 'production') {
 
 // Database
 const DB_PATH = process.env.DB_PATH || path.join(__dirname, 'pharmalab.db');
+fs.mkdirSync(path.dirname(DB_PATH), { recursive: true });
 const db = new sqlite3.Database(DB_PATH);
 
 function dbRun(sql, params = []) {
