@@ -3,6 +3,7 @@ const cors = require('cors');
 const sqlite3 = require('sqlite3').verbose();
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const fs = require('fs');
 const path = require('path');
 
 const app = express();
@@ -13,10 +14,15 @@ app.use(express.json());
 
 // Serve static in production
 if (process.env.NODE_ENV === 'production') {
-  app.use(express.static(path.join(__dirname, '../client/dist')));
-  app.get('/{*splat}', (req, res) => {
-    res.sendFile(path.join(__dirname, '../client/dist', 'index.html'));
-  });
+  const clientDist = path.join(__dirname, '../client/dist');
+  const clientEntry = path.join(clientDist, 'index.html');
+
+  if (fs.existsSync(clientEntry)) {
+    app.use(express.static(clientDist));
+    app.get('/{*splat}', (req, res) => {
+      res.sendFile(clientEntry);
+    });
+  }
 }
 
 // Database
