@@ -2,8 +2,9 @@ import { createContext, useContext, useState, useEffect, type ReactNode } from '
 import { API_BASE } from '../services/api';
 
 interface AuthContextType {
-  user: { id: number; username: string; name: string; role?: string } | null;
+  user: { id: number; username: string; name: string; role?: string; email?: string; phone?: string; jobTitle?: string; avatar?: string } | null;
   login: (username: string, password: string) => Promise<'success' | 'invalid' | 'unavailable'>;
+  updateUser: (user: AuthContextType['user']) => void;
   logout: () => void;
   isAuthenticated: boolean;
   loading: boolean;
@@ -12,7 +13,7 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<{ id: number; username: string; name: string; role?: string } | null>(null);
+  const [user, setUser] = useState<AuthContextType['user']>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -68,8 +69,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.removeItem('token');
   }
 
+  function updateUser(nextUser: AuthContextType['user']) {
+    setUser(nextUser);
+    if (nextUser) localStorage.setItem('user', JSON.stringify(nextUser));
+  }
+
   return (
-    <AuthContext.Provider value={{ user, login, logout, isAuthenticated: !!user, loading }}>
+    <AuthContext.Provider value={{ user, login, updateUser, logout, isAuthenticated: !!user, loading }}>
       {children}
     </AuthContext.Provider>
   );

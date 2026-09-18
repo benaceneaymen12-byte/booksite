@@ -70,6 +70,10 @@ function initDb() {
       password TEXT NOT NULL,
       name TEXT,
       role TEXT DEFAULT 'analyst',
+      email TEXT,
+      phone TEXT,
+      job_title TEXT,
+      avatar TEXT,
       created_at TEXT DEFAULT (datetime('now'))
     )`),
     dbRun(`CREATE TABLE IF NOT EXISTS analyses (
@@ -254,7 +258,31 @@ function initDb() {
       new_value TEXT,
       created_at TEXT DEFAULT (datetime('now'))
     )`),
-  ]).then(() => dbRun('ALTER TABLE culture_media ADD COLUMN volume TEXT').catch(() => null));
+  ]).then(() => Promise.all([
+    dbRun('ALTER TABLE culture_media ADD COLUMN volume TEXT').catch(() => null),
+    dbRun('ALTER TABLE users ADD COLUMN email TEXT').catch(() => null),
+    dbRun('ALTER TABLE users ADD COLUMN phone TEXT').catch(() => null),
+    dbRun('ALTER TABLE users ADD COLUMN job_title TEXT').catch(() => null),
+    dbRun('ALTER TABLE users ADD COLUMN avatar TEXT').catch(() => null),
+  ]));
+}
+
+function publicUser(user) {
+  return {
+    id: user.id,
+    username: user.username,
+    name: user.name || '',
+    role: user.role || 'analyst',
+    email: user.email || '',
+    phone: user.phone || '',
+    jobTitle: user.job_title || '',
+    avatar: user.avatar || '',
+  };
+}
+
+function adminMiddleware(req, res, next) {
+  if (req.user?.role !== 'admin') return res.status(403).json({ message: 'Admin access required' });
+  next();
 }
 
 // Auth middleware
@@ -282,14 +310,49 @@ app.post('/api/auth/login', async (req, res) => {
     const valid = await bcrypt.compare(password, user.password);
     if (!valid) return res.status(401).json({ message: 'Invalid credentials' });
     const token = jwt.sign({ id: user.id, username: user.username, name: user.name, role: user.role || 'analyst' }, process.env.JWT_SECRET || 'pharmalab-secret-key', { expiresIn: '24h' });
-    res.json({ token, user: { id: user.id, username: user.username, name: user.name, role: user.role || 'analyst' } });
+    res.json({ token, user: publicUser(user) });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 });
 
 app.get('/api/auth/me', authMiddleware, async (req, res) => {
-  res.json({ user: req.user });
+  const user = await dbGet('SELECT * FROM users WHERE id = ?', [req.user.id]);
+  res.json({ user: publicUser(user || req.user) });
+});
+
+app.put('/api/auth/profile', authMiddleware, async (req, res) => {
+  try {
+    const { name, email, phone, jobTitle, avatar } = req.body;
+    if (avatar && (!avatar.startsWith('data:image/') || avatar.length > 700000)) {
+      return res.status(400).json({ message: 'Avatar must be an image smaller than 500 KB' });
+    }
+    await dbRun('UPDATE users SET name = ?, email = ?, phone = ?, job_title = ?, avatar = ? WHERE id = ?', [
+      String(name || '').trim(), String(email || '').trim(), String(phone || '').trim(), String(jobTitle || '').trim(), avatar || '', req.user.id,
+    ]);
+    const user = await dbGet('SELECT * FROM users WHERE id = ?', [req.user.id]);
+    res.json({ user: publicUser(user) });
+  } catch (err) { res.status(500).json({ message: err.message }); }
+});
+
+app.get('/api/admin/users', authMiddleware, adminMiddleware, async (req, res) => {
+  const users = await dbAll('SELECT id, username, name, role, email, phone, job_title, avatar, created_at FROM users ORDER BY username');
+  res.json(users.map(publicUser));
+});
+
+app.put('/api/admin/users/:id', authMiddleware, adminMiddleware, async (req, res) => {
+  try {
+    const { name, email, phone, jobTitle, role, password } = req.body;
+    const nextRole = role === 'admin' ? 'admin' : 'analyst';
+    if (password) {
+      const hashed = await bcrypt.hash(password, 10);
+      await dbRun('UPDATE users SET name=?, email=?, phone=?, job_title=?, role=?, password=? WHERE id=?', [name || '', email || '', phone || '', jobTitle || '', nextRole, hashed, req.params.id]);
+    } else {
+      await dbRun('UPDATE users SET name=?, email=?, phone=?, job_title=?, role=? WHERE id=?', [name || '', email || '', phone || '', jobTitle || '', nextRole, req.params.id]);
+    }
+    const user = await dbGet('SELECT * FROM users WHERE id = ?', [req.params.id]);
+    res.json(publicUser(user));
+  } catch (err) { res.status(500).json({ message: err.message }); }
 });
 
 // Analyses

@@ -87,6 +87,8 @@ export function Sidebar() {
       </nav>
       <div className="sidebar-footer">
         {!collapsed && user && <p className="sidebar-meta mb-2 truncate" title={user.name || user.username}>{user.name || user.username}</p>}
+        {user && <Link to="/profile" className="btn btn-secondary btn-sm w-full mb-2">Profile</Link>}
+        {user?.role === 'admin' && <Link to="/admin/users" className="btn btn-secondary btn-sm w-full mb-2">Admin users</Link>}
         <button onClick={logout} className={`btn btn-secondary btn-sm w-full ${collapsed ? 'px-2' : ''}`} title={collapsed ? t('common.logout') : undefined}>
           <span aria-hidden="true">↪</span>{!collapsed && <span>{t('common.logout')}</span>}
         </button>

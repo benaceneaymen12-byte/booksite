@@ -23,6 +23,8 @@ import ReportForm from './pages/ReportForm';
 import ReportPreview from './pages/ReportPreview';
 import SearchPage from './pages/SearchPage';
 import SettingsPage from './pages/SettingsPage';
+import ProfilePage from './pages/ProfilePage';
+import AdminUsersPage from './pages/AdminUsersPage';
 import AuditPage from './pages/AuditPage';
 import LoginPage from './pages/LoginPage';
 import './i18n';
@@ -31,6 +33,13 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, loading } = useAuth();
   if (loading) return <div className="p-8 text-center">Loading...</div>;
   if (!isAuthenticated) return <Navigate to="/login" replace />;
+  return <>{children}</>;
+}
+
+function AdminRoute({ children }: { children: React.ReactNode }) {
+  const { user, loading } = useAuth();
+  if (loading) return <div className="p-8 text-center">Loading...</div>;
+  if (user?.role !== 'admin') return <Navigate to="/" replace />;
   return <>{children}</>;
 }
 
@@ -309,6 +318,8 @@ export default function App() {
                   </ProtectedRoute>
                 }
               />
+              <Route path="/profile" element={<ProtectedRoute><AppLayout><ProfilePage /></AppLayout></ProtectedRoute>} />
+              <Route path="/admin/users" element={<ProtectedRoute><AdminRoute><AppLayout><AdminUsersPage /></AppLayout></AdminRoute></ProtectedRoute>} />
               <Route
                 path="/audit"
                 element={

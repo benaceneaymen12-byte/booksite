@@ -117,6 +117,10 @@ export const api = {
 
   me: () => request('/auth/me'),
 
+  updateProfile: (data: any) => request('/auth/profile', { method: 'PUT', body: JSON.stringify(data) }),
+  getUsers: () => request('/admin/users'),
+  updateUser: (id: number, data: any) => request(`/admin/users/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+
   // Analyses
   getAnalyses: (params?: Record<string, string>) => {
     const qs = params ? '?' + new URLSearchParams(params).toString() : '';
