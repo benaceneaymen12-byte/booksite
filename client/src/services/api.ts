@@ -45,6 +45,8 @@ function normalizeMedia(item: any): any {
     preparedBy: item.preparedBy ?? item.prepared_by ?? '',
     volume: item.volume ?? '',
     createdAt: item.createdAt ?? item.created_at,
+    createdByUser: item.createdByUser ?? item.created_by_user ?? '',
+    updatedByUser: item.updatedByUser ?? item.updated_by_user ?? '',
     updatedAt: item.updatedAt ?? item.updated_at,
     isDemo: item.isDemo ?? !!item.is_demo,
   };

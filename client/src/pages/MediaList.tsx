@@ -234,6 +234,7 @@ export default function MediaList() {
                   </span>
                 )}
               </div>
+              <p className="text-xs text-muted mb-2">Created by: <span className="font-semibold">{m.createdByUser || m.preparedBy || '—'}</span>{m.updatedByUser && <span> · Last edited by: <span className="font-semibold">{m.updatedByUser}</span></span>}</p>
               {m.isDemo && <span className="badge-demo mb-2 inline-block">{t('common.demoBadge')}</span>}
               <div className="text-xs text-gray-500 dark:text-gray-400 space-y-1 mt-2">
                 <p><span className="font-medium">{t('media.manufacturer')}:</span> {m.manufacturer || '—'}</p>

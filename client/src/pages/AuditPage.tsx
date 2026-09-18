@@ -49,10 +49,6 @@ export default function AuditPage() {
                 <span className="text-gray-500 dark:text-gray-400">{t('audit.date')}:</span>
                 <span className="font-medium text-gray-900 dark:text-white ml-1">{log.createdAt ? new Date(log.createdAt).toLocaleString() : '—'}</span>
               </div>
-              <div>
-                <span className="text-gray-500 dark:text-gray-400">{t('audit.user')}:</span>
-                <span className="text-xs text-gray-500 italic">admin</span>
-              </div>
             </div>
             {(log.oldValue || log.newValue) && (
               <div className="grid grid-cols-2 gap-3 mt-3 text-xs">

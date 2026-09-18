@@ -99,6 +99,8 @@ export interface CultureMedia {
   status?: MediaStatus;
   createdAt?: string;
   updatedAt?: string;
+  createdByUser?: string;
+  updatedByUser?: string;
   isDemo?: boolean;
   unit?: string;
 }

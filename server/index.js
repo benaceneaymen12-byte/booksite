@@ -596,7 +596,12 @@ app.delete('/api/water/:id', authMiddleware, async (req, res) => {
 // Media
 app.get('/api/media', authMiddleware, async (req, res) => {
   try {
-    const rows = await dbAll('SELECT * FROM culture_media ORDER BY expiry_date ASC');
+    const rows = await dbAll(`
+      SELECT m.*,
+        (SELECT user FROM audit_logs WHERE record_type = 'media' AND record_id = m.id AND action = 'created' ORDER BY id ASC LIMIT 1) AS created_by_user,
+        (SELECT user FROM audit_logs WHERE record_type = 'media' AND record_id = m.id AND action = 'updated' ORDER BY id DESC LIMIT 1) AS updated_by_user
+      FROM culture_media m ORDER BY expiry_date ASC
+    `);
     res.json(rows.map(r => ({
       ...r,
       quantity_remaining: r.quantity_remaining ?? (r.quantity_prepared || 0) - (r.quantity_used || 0),
@@ -609,7 +614,12 @@ app.get('/api/media', authMiddleware, async (req, res) => {
 
 app.get('/api/media/:id', authMiddleware, async (req, res) => {
   try {
-    const row = await dbGet('SELECT * FROM culture_media WHERE id = ?', [req.params.id]);
+    const row = await dbGet(`
+      SELECT m.*,
+        (SELECT user FROM audit_logs WHERE record_type = 'media' AND record_id = m.id AND action = 'created' ORDER BY id ASC LIMIT 1) AS created_by_user,
+        (SELECT user FROM audit_logs WHERE record_type = 'media' AND record_id = m.id AND action = 'updated' ORDER BY id DESC LIMIT 1) AS updated_by_user
+      FROM culture_media m WHERE m.id = ?
+    `, [req.params.id]);
     if (!row) return res.status(404).json({ message: 'Not found' });
     res.json({ ...row, quantity_remaining: row.quantity_remaining ?? (row.quantity_prepared || 0) - (row.quantity_used || 0), isDemo: !!row.is_demo });
   } catch (err) {
