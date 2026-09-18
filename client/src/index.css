@@ -229,6 +229,94 @@ body.dark {
   position: relative;
 }
 
+.app-brand-header {
+  min-height: 5.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.75rem 1.5rem;
+  background: rgba(255, 255, 255, 0.72);
+  border-bottom: 1px solid rgba(148, 163, 184, 0.18);
+  backdrop-filter: blur(12px);
+}
+
+.dark .app-brand-header {
+  background: rgba(7, 18, 24, 0.78);
+  border-bottom-color: rgba(148, 163, 184, 0.14);
+}
+
+.global-brand-link {
+  display: inline-flex;
+  align-items: center;
+}
+
+.global-brand-logo {
+  width: 9.5rem;
+  max-height: 4rem;
+  object-fit: contain;
+  padding: 0.3rem;
+  border-radius: 0.7rem;
+  background: #fff;
+}
+
+.global-profile-link,
+.sidebar-profile {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  color: inherit;
+  text-decoration: none;
+  font-weight: 700;
+}
+
+.global-profile-link {
+  padding: 0.35rem 0.65rem;
+  border-radius: 999px;
+  background: rgba(21, 158, 209, 0.1);
+}
+
+.global-avatar,
+.sidebar-avatar {
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 999px;
+  object-fit: cover;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.global-avatar-fallback,
+.sidebar-avatar-fallback {
+  background: #159ed1;
+  color: #fff;
+}
+
+.sidebar-profile {
+  width: 100%;
+  padding: 0.5rem;
+  margin-bottom: 0.55rem;
+  border-radius: 0.75rem;
+  color: #dbeafe;
+  background: rgba(148, 163, 184, 0.08);
+}
+
+.sidebar-profile:hover {
+  background: rgba(21, 158, 209, 0.18);
+}
+
+.sidebar-profile.is-collapsed {
+  justify-content: center;
+}
+
+.sidebar-profile-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .content-panel {
   width: 100%;
   padding: 1rem 1rem 2rem;
@@ -238,6 +326,28 @@ body.dark {
 }
 
 @media (max-width: 1023px) {
+  .app-brand-header {
+    min-height: 4.5rem;
+    padding: 0.55rem 1rem;
+  }
+
+  .global-brand-logo {
+    width: 8rem;
+    max-height: 3.25rem;
+  }
+
+  .global-profile-link {
+    padding: 0.2rem;
+    background: transparent;
+  }
+
+  .global-profile-link > span:last-child {
+    max-width: 7rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
   .content-panel {
     padding-bottom: calc(8rem + env(safe-area-inset-bottom));
   }

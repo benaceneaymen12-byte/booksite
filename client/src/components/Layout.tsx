@@ -44,9 +44,6 @@ export function Sidebar() {
       className={`app-sidebar hidden lg:flex flex-col transition-all duration-200 h-screen ${collapsed ? 'w-20' : 'w-64'}`}
     >
       <div className="sidebar-header">
-        <Link to="/" className="brand-link group">
-          <img className="brand-logo-card-small" src={`${import.meta.env.BASE_URL}logok.png`} alt="Biocare Biotech" />
-        </Link>
         <button
           onClick={() => setCollapsed(!collapsed)}
           className="sidebar-toggle"
@@ -86,7 +83,10 @@ export function Sidebar() {
         })}
       </nav>
       <div className="sidebar-footer">
-        {!collapsed && user && <p className="sidebar-meta mb-2 truncate" title={user.name || user.username}>{user.name || user.username}</p>}
+        {user && <Link to="/profile" className={`sidebar-profile ${collapsed ? 'is-collapsed' : ''}`} title={user.name || user.username}>
+          {user.avatar ? <img src={user.avatar} alt="" className="sidebar-avatar" /> : <span className="sidebar-avatar sidebar-avatar-fallback">{(user.name || user.username).slice(0, 1).toUpperCase()}</span>}
+          {!collapsed && <span className="sidebar-profile-name">{user.name || user.username}</span>}
+        </Link>}
         {user && <Link to="/profile" className="btn btn-secondary btn-sm w-full mb-2">Profile</Link>}
         {user?.role === 'admin' && <Link to="/admin/users" className="btn btn-secondary btn-sm w-full mb-2">Admin users</Link>}
         <button onClick={logout} className={`btn btn-secondary btn-sm w-full ${collapsed ? 'px-2' : ''}`} title={collapsed ? t('common.logout') : undefined}>
@@ -98,6 +98,21 @@ export function Sidebar() {
         <p className="sidebar-meta tiny">Not GMP/QC</p>
       </div>
     </aside>
+  );
+}
+
+export function BrandHeader() {
+  const { user } = useAuth();
+  return (
+    <div className="app-brand-header">
+      <Link to="/" className="global-brand-link">
+        <img className="global-brand-logo" src={`${import.meta.env.BASE_URL}logok.png`} alt="Biocare Biotech" />
+      </Link>
+      {user && <Link to="/profile" className="global-profile-link">
+        {user.avatar ? <img src={user.avatar} alt="" className="global-avatar" /> : <span className="global-avatar global-avatar-fallback">{(user.name || user.username).slice(0, 1).toUpperCase()}</span>}
+        <span>{user.name || user.username}</span>
+      </Link>}
+    </div>
   );
 }
 
