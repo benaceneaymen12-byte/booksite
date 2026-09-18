@@ -3,13 +3,21 @@ import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import { defineConfig } from 'vite'
 
+const certKey = 'certs/localhost-key.pem'
+const certFile = 'certs/localhost-cert.pem'
+const hasLocalCertificates = fs.existsSync(certKey) && fs.existsSync(certFile)
+
 export default defineConfig({
   plugins: [react(), tailwindcss()],
   server: {
-    https: {
-      key: fs.readFileSync('certs/localhost-key.pem'),
-      cert: fs.readFileSync('certs/localhost-cert.pem'),
-    },
+    ...(hasLocalCertificates
+      ? {
+          https: {
+            key: fs.readFileSync(certKey),
+            cert: fs.readFileSync(certFile),
+          },
+        }
+      : {}),
     proxy: {
       '/api': {
         target: 'http://localhost:3001',
