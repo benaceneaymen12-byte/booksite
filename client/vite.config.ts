@@ -8,6 +8,7 @@ const certFile = 'certs/localhost-cert.pem'
 const hasLocalCertificates = fs.existsSync(certKey) && fs.existsSync(certFile)
 
 export default defineConfig({
+  base: process.env.GITHUB_ACTIONS ? '/booksite/' : '/',
   plugins: [react(), tailwindcss()],
   server: {
     ...(hasLocalCertificates

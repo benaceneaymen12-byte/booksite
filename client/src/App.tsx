@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { I18nProvider } from './context/I18nContext';
@@ -52,7 +52,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
 
 export default function App() {
   return (
-    <BrowserRouter>
+    <HashRouter>
       <ThemeProvider>
         <I18nProvider>
           <AuthProvider>
@@ -323,6 +323,6 @@ export default function App() {
           </AuthProvider>
         </I18nProvider>
       </ThemeProvider>
-    </BrowserRouter>
+    </HashRouter>
   );
 }
